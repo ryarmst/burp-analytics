@@ -5,7 +5,7 @@ Define analytics and third-party services as JSON, match **Proxy** traffic with 
 ## Build and load
 
 - **JDK 17+**, then `./gradlew jar` → `build/libs/analytics-burp-extension.jar` (Gson bundled; Montoya comes from Burp).
-- Install the JAR under **Extensions**, open the **Analytics DB** tab, and point **Services directory** at a folder of one JSON file per service (`examples/` has samples).
+- Install the JAR under **Extensions**, open the **Analytics DB** tab, and point **Services directory** at a folder of one JSON file per service (`analytics/` has samples).
 
 ## Patterns
 
