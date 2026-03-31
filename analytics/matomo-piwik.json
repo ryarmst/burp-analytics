@@ -1,0 +1,14 @@
+{
+  "schemaVersion": "1",
+  "id": "b4c5d6e7-f8a9-0123-7890-234567890123",
+  "name": "Matomo (Piwik)",
+  "description": "Self-hosted or cloud web analytics: tracking pixel, JS tracker, and HTTP tracking API.",
+  "methodology": "Trackers hit matomo.php or piwik.php with idsite. Org-specific: host is often analytics.* or matomo.* on your domain—add every hostname you use. Review GDPR tools (anonymize IP, consent), goals, and ecommerce parameters.",
+  "patterns": [
+    "[^/]*/(matomo|piwik)\\.php.*",
+    "[^/]*\\.matomo\\.cloud/.*",
+    "[^/]*matomo\\.org/.*",
+    "[^/]*cdn\\.matomo\\.cloud/.*"
+  ],
+  "tlsPassThrough": false
+}

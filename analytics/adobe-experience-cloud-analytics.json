@@ -1,0 +1,19 @@
+{
+  "schemaVersion": "1",
+  "id": "c9d0e1f2-a3b4-5678-2345-789012345678",
+  "name": "Adobe Analytics / Experience Cloud data collection",
+  "description": "Legacy AppMeasurement, AEP Web SDK (alloy.js), edge domains, and regional collection hosts.",
+  "methodology": "Correlate report suite IDs, org IDs, and datastream IDs. Distinguish first-party CNAME collectors from Adobe edge (*.adobedc.net). Validate consent and AEP Identity namespaces. Org-specific: add your vanity collector hostname (e.g. smetrics.company.com) as extra patterns.",
+  "patterns": [
+    "[^/]*\\.omtrdc\\.net/.*",
+    "[^/]*\\.2o7\\.net/.*",
+    "[^/]*\\.data\\.adobedc\\.net/.*",
+    "[^/]*\\.adobedc\\.net/.*",
+    "[^/]*edge\\.adobedc\\.net/.*",
+    "[^/]*metrics\\.adobe\\.com/.*",
+    "[^/]*amc\\.adobe\\.com/.*",
+    "[^/]*smetrics\\.[^/]+/.*",
+    "[^/]*sm\\.[^/]+/.*"
+  ],
+  "tlsPassThrough": false
+}

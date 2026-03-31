@@ -1,0 +1,21 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "AnalyticsServiceDefinition",
+  "type": "object",
+  "required": ["id", "name", "patterns"],
+  "properties": {
+    "schemaVersion": { "type": "string" },
+    "id": { "type": "string", "description": "Stable UUID for this service" },
+    "name": { "type": "string" },
+    "description": { "type": "string" },
+    "methodology": { "type": "string", "description": "Suggested testing notes" },
+    "patterns": {
+      "type": "array",
+      "items": { "type": "string" },
+      "minItems": 1,
+      "description": "Java regex patterns matched against host[:port] + path + query (no http:// or https://)"
+    },
+    "tlsPassThrough": { "type": "boolean" },
+    "tlsHostRegex": { "type": "string", "description": "Deprecated; ignored. TLS host rules are derived from patterns." }
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "schemaVersion": "1",
+  "id": "f8a9b0c1-d2e3-4567-1234-678901234567",
+  "name": "X (Twitter) Ads & Pixel",
+  "description": "Universal Website Tag, conversion events, and ads analytics endpoints.",
+  "methodology": "Identify pixel ID (twq). Map events to campaigns in X Ads UI. Note API and pixel domains may change—monitor for new hostnames during major platform updates.",
+  "patterns": [
+    "[^/]*static\\.ads-twitter\\.com/.*",
+    "[^/]*ads-twitter\\.com/.*",
+    "[^/]*analytics\\.twitter\\.com/.*",
+    "[^/]*t\\.co/.*",
+    "[^/]*twitter\\.com/i/adsct.*",
+    "[^/]*x\\.com/i/adsct.*"
+  ],
+  "tlsPassThrough": false
+}

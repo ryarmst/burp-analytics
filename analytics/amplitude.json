@@ -1,0 +1,16 @@
+{
+  "schemaVersion": "1",
+  "id": "e5f6a7b8-c9d0-1234-ef01-345678901234",
+  "name": "Amplitude",
+  "description": "Behavioral analytics, experimentation hooks, and session replay when enabled.",
+  "methodology": "Identify API key and user/device IDs in event batches. Check EU vs US server zones. Review group-level analytics and experiment assignment calls for authorization boundaries.",
+  "patterns": [
+    "[^/]*api2\\.amplitude\\.com/.*",
+    "[^/]*api\\.amplitude\\.com/.*",
+    "[^/]*api\\.eu\\.amplitude\\.com/.*",
+    "[^/]*cdn\\.amplitude\\.com/.*",
+    "[^/]*amplitude\\.com/.*",
+    "[^/]*sr-client-cfg\\.amplitude\\.com/.*"
+  ],
+  "tlsPassThrough": false
+}

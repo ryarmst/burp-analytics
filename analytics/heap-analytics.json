@@ -1,0 +1,14 @@
+{
+  "schemaVersion": "1",
+  "id": "f6a7b8c9-d0e1-2345-f012-456789012345",
+  "name": "Heap",
+  "description": "Autocapture-heavy product analytics with manual track APIs and data redaction rules.",
+  "methodology": "Confirm app ID and environment. Review autocapture for sensitive fields (forms, URLs); validate redaction lists. Heap may capture full DOM interactions—align with privacy policy.",
+  "patterns": [
+    "[^/]*heapanalytics\\.com/.*",
+    "[^/]*cdn\\.heapanalytics\\.com/.*",
+    "[^/]*api\\.heapanalytics\\.com/.*",
+    "[^/]*\\.heapanalytics\\.com/.*"
+  ],
+  "tlsPassThrough": false
+}

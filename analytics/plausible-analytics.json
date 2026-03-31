@@ -1,0 +1,12 @@
+{
+  "schemaVersion": "1",
+  "id": "a3b4c5d6-e7f8-9012-6789-123456789012",
+  "name": "Plausible Analytics",
+  "description": "Privacy-oriented, lightweight pageview and custom event analytics (managed cloud or self-hosted).",
+  "methodology": "Identify domain and hash in script URL. Self-hosted installs often use custom subdomains (e.g. analytics.company.com, plausible.internal)—add those hosts explicitly. Verify no cookies if relying on strict privacy claims.",
+  "patterns": [
+    "[^/]*plausible\\.io/.*",
+    "[^/]*\\.plausible\\.io/.*"
+  ],
+  "tlsPassThrough": false
+}

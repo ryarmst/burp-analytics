@@ -1,0 +1,20 @@
+{
+  "schemaVersion": "1",
+  "id": "d0e1f2a3-b4c5-6789-3456-890123456789",
+  "name": "HubSpot tracking & forms",
+  "description": "Tracking code, forms, meetings, CTAs, and CRM embeds.",
+  "methodology": "Identify portal/hub ID in script URLs and form posts. Review UTK cookie behavior and form field mapping for PII. Check cross-domain tracking when using multiple branded sites.",
+  "patterns": [
+    "[^/]*js\\.hs-scripts\\.com/.*",
+    "[^/]*js\\.hsforms\\.com/.*",
+    "[^/]*forms\\.hsforms\\.com/.*",
+    "[^/]*forms\\.hubspot\\.com/.*",
+    "[^/]*api\\.hubapi\\.com/.*",
+    "[^/]*track\\.hubspot\\.com/.*",
+    "[^/]*hubspot\\.com/.*",
+    "[^/]*hsforms\\.com/.*",
+    "[^/]*hs-banner\\.com/.*",
+    "[^/]*hsleadflows\\.net/.*"
+  ],
+  "tlsPassThrough": false
+}

@@ -1,0 +1,13 @@
+{
+  "schemaVersion": "1",
+  "id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+  "name": "Google Tag Manager",
+  "description": "Google Tag Manager container and gtag.js loads.",
+  "methodology": "Review dataLayer pushes, third-party tags, and consent mode. Map container IDs to org policy.",
+  "patterns": [
+    "[^/]*googletagmanager\\.com/.*",
+    "[^/]*google-analytics\\.com/.*",
+    "[^/]*www\\.google-analytics\\.com/.*"
+  ],
+  "tlsPassThrough": false
+}

@@ -1,0 +1,13 @@
+{
+  "schemaVersion": "1",
+  "id": "c5d6e7f8-a9b0-1234-8901-345678901234",
+  "name": "Snowplow (Open Analytics)",
+  "description": "Event pipeline: collectors (Scala stream, BDP, micro), Iglu, and tracker endpoints.",
+  "methodology": "Collectors are almost always org-specific subdomains or paths (e.g. /com.snowplowanalytics.snowplow/tp2). Add your collector FQDNs as patterns (e.g. [^/]*collector\\.example\\.com/.*). Inspect payload schema versions and contexts for PII. Micro/staging collectors often differ from prod.",
+  "patterns": [
+    "[^/]*\\.snowplowanalytics\\.com/.*",
+    "[^/]*\\.snowplow\\.io/.*",
+    "[^/]*/com\\.snowplowanalytics\\.[^/]+/.*"
+  ],
+  "tlsPassThrough": false
+}

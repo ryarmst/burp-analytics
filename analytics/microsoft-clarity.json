@@ -1,0 +1,13 @@
+{
+  "schemaVersion": "1",
+  "id": "c1d2e3f4-a5b6-7890-4567-901234567890",
+  "name": "Microsoft Clarity",
+  "description": "Free heatmaps, session recordings, and behavioral metrics for web apps.",
+  "methodology": "Project ID appears in clarity.ms script URL. Recordings may capture sensitive UI—check masking and URL exclusion rules. Often deployed alongside Bing UET; distinguish in analysis.",
+  "patterns": [
+    "[^/]*www\\.clarity\\.ms/.*",
+    "[^/]*clarity\\.ms/.*",
+    "[^/]*scripts\\.clarity\\.ms/.*"
+  ],
+  "tlsPassThrough": false
+}

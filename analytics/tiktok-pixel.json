@@ -1,0 +1,15 @@
+{
+  "schemaVersion": "1",
+  "id": "b0c1d2e3-f4a5-6789-3456-890123456789",
+  "name": "TikTok Pixel & Events API",
+  "description": "analytics.tiktok.com scripts, pixel endpoints, and marketing API traffic.",
+  "methodology": "Extract pixel ID and event payloads. Events API may originate from server—correlate with browser pixel for deduplication. Regional endpoints (EU vs US) may apply.",
+  "patterns": [
+    "[^/]*analytics\\.tiktok\\.com/.*",
+    "[^/]*ads\\.tiktok\\.com/.*",
+    "[^/]*business-api\\.tiktok\\.com/.*",
+    "[^/]*tiktok\\.com/i18n/pixel/.*",
+    "[^/]*tiktok\\.com/.*pixel.*"
+  ],
+  "tlsPassThrough": false
+}

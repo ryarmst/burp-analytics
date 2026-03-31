@@ -1,0 +1,13 @@
+{
+  "schemaVersion": "1",
+  "id": "b2c3d4e5-f6a7-8901-bcde-f12345678901",
+  "name": "Adobe Experience Platform / Launch",
+  "description": "Adobe Launch (Tags) script and collection endpoints.",
+  "methodology": "Identify Launch property and rules; review extensions and data elements; validate consent and PII handling.",
+  "patterns": [
+    "[^/]*\\.adobedtm\\.com/.*",
+    "[^/]*\\.adobe\\.com/.*launch.*",
+    "[^/]*assets\\.adobedtm\\.com/.*"
+  ],
+  "tlsPassThrough": false
+}

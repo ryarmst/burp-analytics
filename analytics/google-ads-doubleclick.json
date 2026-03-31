@@ -1,0 +1,20 @@
+{
+  "schemaVersion": "1",
+  "id": "d2e3f4a5-b6c7-8901-5678-012345678901",
+  "name": "Google Ads, Marketing Platform & DoubleClick",
+  "description": "Conversion tracking, remarketing, DV360/Floodlight tags, and ad delivery beacons.",
+  "methodology": "Correlate conversion IDs, GCLID, and floodlight activity tags. Review consent mode v2 parameters. Distinguish measurement (googleadservices.com, googleads.g.doubleclick.net) from actual ad creatives. Org vanity URLs may proxy through your domain—extend patterns if needed.",
+  "patterns": [
+    "[^/]*googleadservices\\.com/.*",
+    "[^/]*www\\.googleadservices\\.com/.*",
+    "[^/]*googleads\\.g\\.doubleclick\\.net/.*",
+    "[^/]*doubleclick\\.net/.*",
+    "[^/]*googlesyndication\\.com/.*",
+    "[^/]*pagead2\\.googlesyndication\\.com/.*",
+    "[^/]*www\\.google\\.com/pagead/.*",
+    "[^/]*www\\.google\\.com/ccm/.*",
+    "[^/]*google\\.com/ads/.*",
+    "[^/]*td\\.doubleclick\\.net/.*"
+  ],
+  "tlsPassThrough": false
+}

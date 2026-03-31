@@ -1,0 +1,14 @@
+{
+  "schemaVersion": "1",
+  "id": "a9b0c1d2-e3f4-5678-2345-789012345678",
+  "name": "Pinterest Tag",
+  "description": "Pintrk events, catalog, and conversion reporting for Pinterest ads.",
+  "methodology": "Capture tag ID (tid). Review enhanced match parameters for email/phone hashing. Validate event deduplication if using API + browser tag.",
+  "patterns": [
+    "[^/]*s\\.pinimg\\.com/.*",
+    "[^/]*ct\\.pinterest\\.com/.*",
+    "[^/]*pinterest\\.com/ct/.*",
+    "[^/]*pintrk\\.pinterest\\.com/.*"
+  ],
+  "tlsPassThrough": false
+}

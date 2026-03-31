@@ -1,0 +1,16 @@
+{
+  "schemaVersion": "1",
+  "id": "d4e5f6a7-b8c9-0123-def0-234567890123",
+  "name": "Mixpanel",
+  "description": "Product analytics: track(), identify(), group(), and server-side ingestion.",
+  "methodology": "Extract project token / distinct_id; check super properties and group keys for data governance. Distinguish EU vs US API endpoints if residency matters. Review autocapture and session replay toggles if used.",
+  "patterns": [
+    "[^/]*api\\.mixpanel\\.com/.*",
+    "[^/]*api-eu\\.mixpanel\\.com/.*",
+    "[^/]*decide\\.mixpanel\\.com/.*",
+    "[^/]*mixpanel\\.com/.*",
+    "[^/]*cdn\\.mxpnl\\.com/.*",
+    "[^/]*mxpnl\\.com/.*"
+  ],
+  "tlsPassThrough": false
+}

@@ -1,0 +1,16 @@
+{
+  "schemaVersion": "1",
+  "id": "c3d4e5f6-a7b8-9012-cdef-123456789012",
+  "name": "Segment (Twilio Segment)",
+  "description": "Customer data platform: event ingestion, destinations, and bundled analytics.js / Analytics 2.0.",
+  "methodology": "Map writeKey / source IDs in payloads; verify PII and consent before forwarding. Review which destinations are enabled (may duplicate events to ad pixels). Test batch vs realtime APIs. Org-specific: add patterns for custom CDN or proxy hostnames if you route Segment through your domain.",
+  "patterns": [
+    "[^/]*api\\.segment\\.io/.*",
+    "[^/]*cdn\\.segment\\.com/.*",
+    "[^/]*cdn\\.segment\\.io/.*",
+    "[^/]*segment\\.io/.*",
+    "[^/]*segment\\.com/.*",
+    "[^/]*\\.segmentapis\\.com/.*"
+  ],
+  "tlsPassThrough": false
+}

@@ -1,0 +1,16 @@
+{
+  "schemaVersion": "1",
+  "id": "a7b8c9d0-e1f2-3456-0123-567890123456",
+  "name": "Hotjar",
+  "description": "Heatmaps, session recordings, surveys, and feedback widgets.",
+  "methodology": "Note site ID (hjid). Recordings can capture PII in DOM—verify suppression and sampling. Check cross-origin iframe behavior and consent gating before enabling on authenticated areas.",
+  "patterns": [
+    "[^/]*static\\.hotjar\\.com/.*",
+    "[^/]*script\\.hotjar\\.com/.*",
+    "[^/]*insights\\.hotjar\\.com/.*",
+    "[^/]*in\\.hotjar\\.com/.*",
+    "[^/]*vc\\.hotjar\\.com/.*",
+    "[^/]*hotjar\\.com/.*"
+  ],
+  "tlsPassThrough": false
+}

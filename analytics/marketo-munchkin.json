@@ -1,0 +1,15 @@
+{
+  "schemaVersion": "1",
+  "id": "e1f2a3b4-c5d6-7890-4567-901234567890",
+  "name": "Marketo (Munchkin)",
+  "description": "Munchkin beacon, form posts, RTP, and API traffic to Marketo-hosted endpoints.",
+  "methodology": "Extract Munchkin account ID (munchkinId) and form IDs. Validate lead attribution and email capture flows. EU vs global pods may differ—confirm endpoint matches subscription.",
+  "patterns": [
+    "[^/]*mktoresp\\.com/.*",
+    "[^/]*\\.mktoresp\\.com/.*",
+    "[^/]*marketo\\.com/.*",
+    "[^/]*app\\.marketo\\.com/.*",
+    "[^/]*engage\\.marketo\\.com/.*"
+  ],
+  "tlsPassThrough": false
+}

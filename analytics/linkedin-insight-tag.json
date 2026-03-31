@@ -1,0 +1,14 @@
+{
+  "schemaVersion": "1",
+  "id": "e7f8a9b0-c1d2-3456-0123-567890123456",
+  "name": "LinkedIn Insight Tag",
+  "description": "B2B ad conversion and website retargeting via snap.licdn.com and px.ads.linkedin.com.",
+  "methodology": "Note partner ID in script. Insight tag fires on page load and conversions—map to LinkedIn Campaign Manager. Combine with privacy review for logged-in LinkedIn users on same browser.",
+  "patterns": [
+    "[^/]*snap\\.licdn\\.com/.*",
+    "[^/]*px\\.ads\\.linkedin\\.com/.*",
+    "[^/]*www\\.linkedin\\.com/px/.*",
+    "[^/]*linkedin\\.com/px/.*"
+  ],
+  "tlsPassThrough": false
+}

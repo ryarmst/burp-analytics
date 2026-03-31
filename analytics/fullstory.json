@@ -1,0 +1,14 @@
+{
+  "schemaVersion": "1",
+  "id": "b8c9d0e1-f2a3-4567-1234-678901234567",
+  "name": "FullStory",
+  "description": "Digital experience analytics with high-fidelity session replay.",
+  "methodology": "Capture org ID / bundle configuration. Replays are sensitive: validate exclude rules, masking, and FS.consent. Enterprise often uses allowlisted domains—confirm scope matches your test environment.",
+  "patterns": [
+    "[^/]*fullstory\\.com/.*",
+    "[^/]*rs\\.fullstory\\.com/.*",
+    "[^/]*edge\\.fullstory\\.com/.*",
+    "[^/]*\\.fullstory\\.com/.*"
+  ],
+  "tlsPassThrough": false
+}

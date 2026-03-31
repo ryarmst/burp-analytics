@@ -1,0 +1,15 @@
+{
+  "schemaVersion": "1",
+  "id": "f2a3b4c5-d6e7-8901-5678-012345678901",
+  "name": "Salesforce Pardot (Account Engagement)",
+  "description": "Tracking pi.js, visitor/page views, forms, and handler endpoints.",
+  "methodology": "Map account piAId / tracker domains. Custom tracker subdomains (go.company.com, www2.company.com) are common—add org-specific host patterns. Review grading, automation, and email capture for consent.",
+  "patterns": [
+    "[^/]*pi\\.pardot\\.com/.*",
+    "[^/]*go\\.pardot\\.com/.*",
+    "[^/]*pardot\\.com/.*",
+    "[^/]*\\.pardot\\.com/.*",
+    "[^/]*pd\\.cdn\\.pardot\\.com/.*"
+  ],
+  "tlsPassThrough": false
+}
