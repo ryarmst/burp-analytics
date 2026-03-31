@@ -1,0 +1,39 @@
+name: Build
+
+on:
+  push:
+    branches: [main, master]
+    tags: ["v*"]
+  pull_request:
+    branches: [main, master]
+  workflow_dispatch:
+
+jobs:
+  jar:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+          cache: gradle
+
+      - name: Build JAR
+        run: chmod +x gradlew && ./gradlew jar --no-daemon --stacktrace
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: analytics-burp-extension
+          path: build/libs/analytics-burp-extension.jar
+
+      - name: Attach JAR to GitHub Release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: build/libs/analytics-burp-extension.jar
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

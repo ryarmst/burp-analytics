@@ -1,10 +1,11 @@
 # Analytics Database (Burp extension)
 
-Define analytics and third-party services as JSON, match **Proxy** traffic with regex on **host[:port] + path + query** (no `http://` or `https://`), and get Site Map issues when new domains hit your rules.
+Define analytics and third-party services as JSON, match **Proxy** traffic with regex on **host[:port] + path + query** and get Site Map issues when new domains hit your rules.
 
 ## Build and load
 
 - **JDK 17+**, then `./gradlew jar` → `build/libs/analytics-burp-extension.jar` (Gson bundled; Montoya comes from Burp).
+- **CI:** [GitHub Actions](.github/workflows/build.yml) builds on push/PR and uploads the JAR as an artifact. Push a tag `v1.2.3` to create a **Release** with the JAR attached.
 - Install the JAR under **Extensions**, open the **Analytics DB** tab, and point **Services directory** at a folder of one JSON file per service (`analytics/` has samples).
 
 ## Patterns
