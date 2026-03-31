@@ -5,7 +5,7 @@ Define analytics and third-party services as JSON, match **Proxy** traffic with 
 ## Build and load
 
 - **JDK 17+**, then `./gradlew jar` → `build/libs/analytics-burp-extension.jar` (Gson bundled; Montoya comes from Burp).
-- **CI:** [GitHub Actions](.github/workflows/build.yml) builds on push/PR and uploads the JAR as an artifact. Push a tag `v1.2.3` to create a **Release** with the JAR attached.
+- **CI:** [GitHub Actions](.github/workflows/build.yml) builds on push/PR and uploads the JAR as an artifact. **Releases:** either push a `v*` tag (JAR attached automatically) or create/publish a release in the GitHub UI (a workflow run attaches the JAR when the release is **published**).
 - Install the JAR under **Extensions**, open the **Analytics DB** tab, and point **Services directory** at a folder of one JSON file per service (`analytics/` has samples).
 
 ## Patterns
