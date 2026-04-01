@@ -2,6 +2,10 @@
 
 Define analytics and third-party services as JSON, match **Proxy** traffic with regex on **host[:port] + path + query** and get Site Map issues when new domains hit your rules.
 
+## Extension Use
+- Download and load the latest JAR release
+- Download the `analytics` folder to use as a baseline if needed
+
 ## Build and load
 
 - **JDK 17+**, then `./gradlew jar` → `build/libs/analytics-burp-extension.jar` (Gson bundled; Montoya comes from Burp).
