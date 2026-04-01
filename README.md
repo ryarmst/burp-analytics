@@ -19,3 +19,8 @@ Define analytics and third-party services as JSON, match **Proxy** traffic with 
 ## Issues
 
 New FQDNs in the session list get an informational **Site Map** issue (metadata uses **Origin**, else **Referer**, else the request URL).
+
+## TODO
+Consider using data from:
+- https://github.com/duckduckgo/tracker-radar
+- https://github.com/ghostery/trackerdb
