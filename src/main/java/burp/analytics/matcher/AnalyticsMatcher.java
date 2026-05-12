@@ -20,6 +20,12 @@ public final class AnalyticsMatcher {
         ref.set(Snapshot.compile(definitions != null ? definitions : List.of()));
     }
 
+    public List<String> validateDefinitions(List<ServiceDefinition> definitions) {
+        List<String> errors = new ArrayList<>();
+        Snapshot.compile(definitions != null ? definitions : List.of(), errors);
+        return errors;
+    }
+
     public Optional<MatchResult> match(String matchTarget) {
         if (matchTarget == null) {
             return Optional.empty();
@@ -48,6 +54,10 @@ public final class AnalyticsMatcher {
         }
 
         static Snapshot compile(List<ServiceDefinition> defs) {
+            return compile(defs, null);
+        }
+
+        static Snapshot compile(List<ServiceDefinition> defs, List<String> errors) {
             List<Entry> list = new ArrayList<>();
             for (ServiceDefinition def : defs) {
                 if (def.getPatterns() == null) {
@@ -62,7 +72,13 @@ public final class AnalyticsMatcher {
                     try {
                         pats.add(Pattern.compile(raw));
                         originals.add(raw);
-                    } catch (PatternSyntaxException ignored) {
+                    } catch (PatternSyntaxException e) {
+                        if (errors != null) {
+                            String serviceName = def.getName() == null || def.getName().isBlank()
+                                    ? def.getId()
+                                    : def.getName();
+                            errors.add("Invalid regex for " + serviceName + ": " + raw + " (" + e.getDescription() + ")");
+                        }
                     }
                 }
                 if (!pats.isEmpty()) {

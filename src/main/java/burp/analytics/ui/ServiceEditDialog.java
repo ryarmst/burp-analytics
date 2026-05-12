@@ -21,6 +21,8 @@ import java.awt.Font;
 import java.awt.Window;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.regex.Pattern;
+import java.util.regex.PatternSyntaxException;
 
 /** Add/edit service (scrollable form). */
 final class ServiceEditDialog extends JDialog {
@@ -145,6 +147,16 @@ final class ServiceEditDialog extends JDialog {
                 JOptionPane.showMessageDialog(
                         this,
                         "Patterns must not include http:// or https://. Remove the scheme and try again.",
+                        "Validation",
+                        JOptionPane.WARNING_MESSAGE);
+                return;
+            }
+            try {
+                Pattern.compile(t);
+            } catch (PatternSyntaxException ex) {
+                JOptionPane.showMessageDialog(
+                        this,
+                        "Invalid regex pattern:\n" + t + "\n\n" + ex.getDescription(),
                         "Validation",
                         JOptionPane.WARNING_MESSAGE);
                 return;

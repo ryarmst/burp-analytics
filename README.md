@@ -12,6 +12,30 @@ Define analytics and third-party services as JSON, match **Proxy** traffic with 
 - **CI:** [GitHub Actions](.github/workflows/build.yml) builds on push/PR and uploads the JAR as an artifact. **Releases:** either push a `v*` tag (JAR attached automatically) or create/publish a release in the GitHub UI (a workflow run attaches the JAR when the release is **published**).
 - Install the JAR under **Extensions**, open the **Analytics DB** tab, and point **Services directory** at a folder of one JSON file per service (`analytics/` has samples).
 
+## Rule editor web app
+
+Run the local browser editor against the sample rules:
+
+```bash
+./gradlew runRuleEditor
+```
+
+Open `http://127.0.0.1:8765`.
+
+Run it against a different services directory:
+
+```bash
+./gradlew runRuleEditor -PservicesDir=/path/to/analytics
+```
+
+Use a different port:
+
+```bash
+./gradlew runRuleEditor -Pport=9000
+```
+
+The editor loads, validates, saves, creates, and deletes the same service JSON files used by the Burp extension.
+
 ## Patterns
 
 - **Save** / **Load** sync that folder. **Import JSON** pulls files in.

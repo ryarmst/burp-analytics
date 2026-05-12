@@ -1,6 +1,7 @@
 package burp.analytics.ui;
 
 import burp.analytics.data.ServiceDefinition;
+import burp.analytics.handler.AnalyticsTrafficAnalyzer;
 import burp.analytics.session.SessionMatch;
 import burp.analytics.session.SessionMatchStore;
 import burp.analytics.export.FoxyProxyConfigExporter;
@@ -11,6 +12,7 @@ import burp.analytics.util.RegexSuggest;
 import burp.api.montoya.MontoyaApi;
 import burp.api.montoya.http.message.requests.HttpRequest;
 import burp.api.montoya.persistence.Preferences;
+import burp.api.montoya.proxy.ProxyHttpRequestResponse;
 
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
@@ -21,9 +23,11 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JSplitPane;
 import javax.swing.JTable;
+import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.ListSelectionModel;
 import javax.swing.SwingUtilities;
+import javax.swing.SwingWorker;
 import javax.swing.table.AbstractTableModel;
 import javax.swing.table.DefaultTableCellRenderer;
 import java.awt.BorderLayout;
@@ -50,9 +54,11 @@ public final class AnalyticsSuiteTab extends JPanel {
     private final Preferences preferences;
     private final AnalyticsController controller;
     private final SessionMatchStore sessionMatches;
+    private final AnalyticsTrafficAnalyzer trafficAnalyzer;
 
     private final JTextField dirField = new JTextField(48);
     private final JButton saveButton = new JButton("Save");
+    private final JButton validationButton = new JButton("Validation");
     private final ServiceTableModel serviceModel = new ServiceTableModel();
     private final SessionTableModel sessionModel = new SessionTableModel();
     private final JTable serviceTable = new JTable(serviceModel);
@@ -62,12 +68,14 @@ public final class AnalyticsSuiteTab extends JPanel {
             MontoyaApi api,
             Preferences preferences,
             AnalyticsController controller,
-            SessionMatchStore sessionMatches) {
+            SessionMatchStore sessionMatches,
+            AnalyticsTrafficAnalyzer trafficAnalyzer) {
         super(new BorderLayout(8, 8));
         this.api = api;
         this.preferences = preferences;
         this.controller = controller;
         this.sessionMatches = sessionMatches;
+        this.trafficAnalyzer = trafficAnalyzer;
 
         setBorder(BorderFactory.createEmptyBorder(8, 8, 8, 8));
 
@@ -82,9 +90,12 @@ public final class AnalyticsSuiteTab extends JPanel {
         load.addActionListener(e -> loadDirectory());
         saveButton.setToolTipText("Write pending changes to JSON files in the services directory");
         saveButton.addActionListener(e -> saveAllToDisk());
+        validationButton.setToolTipText("Show JSON and regex validation messages for the loaded services");
+        validationButton.addActionListener(e -> showValidationMessages());
         dirBtns.add(browse);
         dirBtns.add(load);
         dirBtns.add(saveButton);
+        dirBtns.add(validationButton);
         JButton foxyExport = new JButton("FoxyProxy JSON");
         foxyExport.setToolTipText(
                 "Export a JSON array: TLS mirror excludes (full URL regex) plus a catch-all include wildcard for FoxyProxy");
@@ -124,7 +135,7 @@ public final class AnalyticsSuiteTab extends JPanel {
         svcPanel.add(svcBtns, BorderLayout.SOUTH);
 
         JPanel sessPanel = new JPanel(new BorderLayout());
-        sessPanel.setBorder(BorderFactory.createTitledBorder("Proxy matches (this session, one row per FQDN)"));
+        sessPanel.setBorder(BorderFactory.createTitledBorder("Proxy matches (this session, one row per FQDN + service)"));
         sessionTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         sessionTable.setRowHeight(22);
         sessionTable.setFillsViewportHeight(true);
@@ -147,10 +158,14 @@ public final class AnalyticsSuiteTab extends JPanel {
         addTlsSession.setToolTipText(
                 "For each unique FQDN in this list, add a host-only pattern to TLS pass-through (skips hosts already covered)");
         addTlsSession.addActionListener(e -> addSessionHostsToTlsPassThrough());
+        JButton scanHistory = new JButton("Scan proxy history");
+        scanHistory.setToolTipText("Passively scan existing Proxy history for analytics service matches");
+        scanHistory.addActionListener(e -> scanProxyHistory(scanHistory));
         sessBtns.add(clear);
         sessBtns.add(repeater);
         sessBtns.add(cfg);
         sessBtns.add(addTlsSession);
+        sessBtns.add(scanHistory);
         sessPanel.add(sessBtns, BorderLayout.SOUTH);
 
         JSplitPane split = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, svcPanel, sessPanel);
@@ -160,6 +175,7 @@ public final class AnalyticsSuiteTab extends JPanel {
         add(split, BorderLayout.CENTER);
 
         updateSaveButtonState();
+        updateValidationButtonState();
 
         String saved = preferences.getString(PREF_DIR);
         if (saved != null && !saved.isBlank()) {
@@ -173,6 +189,7 @@ public final class AnalyticsSuiteTab extends JPanel {
             }
         }
         updateSaveButtonState();
+        updateValidationButtonState();
     }
 
     public void refreshAfterSessionMatch() {
@@ -195,11 +212,31 @@ public final class AnalyticsSuiteTab extends JPanel {
             controller.upsert(out);
             serviceModel.setRows(controller.getDefinitions());
             updateSaveButtonState();
+            updateValidationButtonState();
         }
     }
 
     private void updateSaveButtonState() {
         saveButton.setEnabled(controller.isDirty());
+    }
+
+    private void updateValidationButtonState() {
+        List<String> messages = controller.getValidationMessages();
+        validationButton.setEnabled(!messages.isEmpty());
+        validationButton.setText(messages.isEmpty() ? "Validation" : "Validation (" + messages.size() + ")");
+    }
+
+    private void showValidationMessages() {
+        List<String> messages = controller.getValidationMessages();
+        if (messages.isEmpty()) {
+            JOptionPane.showMessageDialog(this, "No validation messages.", "Validation", JOptionPane.INFORMATION_MESSAGE);
+            return;
+        }
+        JTextArea area = new JTextArea(String.join("\n", messages), 14, 80);
+        area.setEditable(false);
+        area.setLineWrap(true);
+        area.setWrapStyleWord(true);
+        JOptionPane.showMessageDialog(this, new JScrollPane(area), "Validation", JOptionPane.WARNING_MESSAGE);
     }
 
     private void saveAllToDisk() {
@@ -211,6 +248,7 @@ public final class AnalyticsSuiteTab extends JPanel {
             controller.saveAll();
             serviceModel.setRows(controller.getDefinitions());
             updateSaveButtonState();
+            updateValidationButtonState();
             api.logging().logToOutput("Analytics: saved " + controller.getDefinitions().size() + " service(s).");
         } catch (Exception ex) {
             api.logging().logToError("Analytics: save failed: " + ex.getMessage());
@@ -253,6 +291,7 @@ public final class AnalyticsSuiteTab extends JPanel {
             controller.reloadFromDisk();
             serviceModel.setRows(controller.getDefinitions());
             updateSaveButtonState();
+            updateValidationButtonState();
             api.logging().logToOutput("Analytics: loaded " + controller.getDefinitions().size() + " service(s).");
         } catch (Exception ex) {
             api.logging().logToError("Analytics: load failed: " + ex.getMessage());
@@ -270,6 +309,7 @@ public final class AnalyticsSuiteTab extends JPanel {
             controller.upsert(saved);
             serviceModel.setRows(controller.getDefinitions());
             updateSaveButtonState();
+            updateValidationButtonState();
         }
     }
 
@@ -285,6 +325,7 @@ public final class AnalyticsSuiteTab extends JPanel {
             controller.upsert(updated);
             serviceModel.setRows(controller.getDefinitions());
             updateSaveButtonState();
+            updateValidationButtonState();
         }
     }
 
@@ -303,6 +344,7 @@ public final class AnalyticsSuiteTab extends JPanel {
         controller.queueDelete(cur);
         serviceModel.setRows(controller.getDefinitions());
         updateSaveButtonState();
+        updateValidationButtonState();
     }
 
     private void toggleTlsPassThroughForSelected() {
@@ -316,6 +358,7 @@ public final class AnalyticsSuiteTab extends JPanel {
         controller.upsert(s);
         serviceModel.setRows(controller.getDefinitions());
         updateSaveButtonState();
+        updateValidationButtonState();
         TlsProjectOptionsHelper.mergeTlsRulesIntoBurp(api, controller.getDefinitions());
     }
 
@@ -373,6 +416,7 @@ public final class AnalyticsSuiteTab extends JPanel {
         controller.upsert(bucket);
         serviceModel.setRows(controller.getDefinitions());
         updateSaveButtonState();
+        updateValidationButtonState();
         TlsProjectOptionsHelper.mergeTlsRulesIntoBurp(api, controller.getDefinitions());
         api.logging()
                 .logToOutput(
@@ -418,6 +462,7 @@ public final class AnalyticsSuiteTab extends JPanel {
                 controller.importFromJsonFiles(paths);
                 serviceModel.setRows(controller.getDefinitions());
                 updateSaveButtonState();
+                updateValidationButtonState();
             } catch (Exception ex) {
                 JOptionPane.showMessageDialog(this, "Import failed: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
             }
@@ -491,6 +536,66 @@ public final class AnalyticsSuiteTab extends JPanel {
         sessionModel.setRows(sessionMatches.snapshot());
     }
 
+    private void scanProxyHistory(JButton scanButton) {
+        if (controller.getDefinitions().isEmpty()) {
+            JOptionPane.showMessageDialog(
+                    this, "Load service definitions before scanning Proxy history.", "Proxy history", JOptionPane.INFORMATION_MESSAGE);
+            return;
+        }
+        scanButton.setEnabled(false);
+        api.logging().logToOutput("Analytics: scanning Proxy history for analytics matches.");
+        SwingWorker<ScanHistoryResult, Void> worker =
+                new SwingWorker<>() {
+                    @Override
+                    protected ScanHistoryResult doInBackground() {
+                        int scanned = 0;
+                        int matched = 0;
+                        int recorded = 0;
+                        List<ProxyHttpRequestResponse> history = api.proxy().history();
+                        for (ProxyHttpRequestResponse item : history) {
+                            scanned++;
+                            AnalyticsTrafficAnalyzer.MatchRecordStatus status =
+                                    trafficAnalyzer.recordProxyHistoryItem(item, true);
+                            if (status != AnalyticsTrafficAnalyzer.MatchRecordStatus.NO_MATCH) {
+                                matched++;
+                            }
+                            if (status == AnalyticsTrafficAnalyzer.MatchRecordStatus.RECORDED) {
+                                recorded++;
+                            }
+                        }
+                        return new ScanHistoryResult(scanned, matched, recorded);
+                    }
+
+                    @Override
+                    protected void done() {
+                        scanButton.setEnabled(true);
+                        try {
+                            ScanHistoryResult result = get();
+                            refreshSessionTable();
+                            String message =
+                                    "Scanned "
+                                            + result.scanned()
+                                            + " Proxy history item(s), found "
+                                            + result.matched()
+                                            + " match(es), and added "
+                                            + result.recorded()
+                                            + " new session row(s).";
+                            api.logging().logToOutput("Analytics: " + message);
+                            JOptionPane.showMessageDialog(
+                                    AnalyticsSuiteTab.this, message, "Proxy history", JOptionPane.INFORMATION_MESSAGE);
+                        } catch (Exception ex) {
+                            api.logging().logToError("Analytics: Proxy history scan failed: " + ex.getMessage());
+                            JOptionPane.showMessageDialog(
+                                    AnalyticsSuiteTab.this,
+                                    "Proxy history scan failed: " + ex.getMessage(),
+                                    "Proxy history",
+                                    JOptionPane.ERROR_MESSAGE);
+                        }
+                    }
+                };
+        worker.execute();
+    }
+
     private void sendSelectedToRepeater() {
         int row = sessionTable.getSelectedRow();
         if (row < 0) {
@@ -528,6 +633,7 @@ public final class AnalyticsSuiteTab extends JPanel {
             controller.upsert(updated);
             serviceModel.setRows(controller.getDefinitions());
             updateSaveButtonState();
+            updateValidationButtonState();
         }
     }
 
@@ -539,6 +645,8 @@ public final class AnalyticsSuiteTab extends JPanel {
         }
         return null;
     }
+
+    private record ScanHistoryResult(int scanned, int matched, int recorded) {}
 
     private static String truncate(String s, int max) {
         if (s == null) {

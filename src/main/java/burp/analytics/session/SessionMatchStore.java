@@ -8,14 +8,14 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
-/** Session proxy matches: one row per FQDN, newest first. */
+/** Session proxy matches: one row per FQDN and service, newest first. */
 public final class SessionMatchStore {
 
     private static final int DEFAULT_MAX = 500;
 
     private final int maxSize;
     private final List<SessionMatch> matches = new ArrayList<>();
-    private final Set<String> seenFqdns = ConcurrentHashMap.newKeySet();
+    private final Set<String> seenFqdnServices = ConcurrentHashMap.newKeySet();
     private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
 
     public SessionMatchStore() {
@@ -26,7 +26,7 @@ public final class SessionMatchStore {
         this.maxSize = Math.max(1, maxSize);
     }
 
-    public boolean recordIfNewFqdn(
+    public boolean recordIfNewFqdnService(
             String fqdn,
             String serviceId,
             String serviceName,
@@ -36,7 +36,8 @@ public final class SessionMatchStore {
         if (fqdn == null || fqdn.isBlank()) {
             return false;
         }
-        if (!seenFqdns.add(fqdn)) {
+        String key = dedupeKey(fqdn, serviceId);
+        if (!seenFqdnServices.add(key)) {
             return false;
         }
         lock.writeLock().lock();
@@ -67,9 +68,14 @@ public final class SessionMatchStore {
         lock.writeLock().lock();
         try {
             matches.clear();
-            seenFqdns.clear();
+            seenFqdnServices.clear();
         } finally {
             lock.writeLock().unlock();
         }
+    }
+
+    private static String dedupeKey(String fqdn, String serviceId) {
+        String service = serviceId == null || serviceId.isBlank() ? "" : serviceId;
+        return fqdn.toLowerCase() + "\n" + service;
     }
 }

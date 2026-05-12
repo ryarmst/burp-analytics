@@ -20,6 +20,7 @@ public final class AnalyticsController {
     private final JsonServiceRepository repository = new JsonServiceRepository();
     private final AnalyticsMatcher matcher;
     private final CopyOnWriteArrayList<ServiceDefinition> definitions = new CopyOnWriteArrayList<>();
+    private final CopyOnWriteArrayList<String> validationMessages = new CopyOnWriteArrayList<>();
     private final Set<String> pendingDeletes = ConcurrentHashMap.newKeySet();
     private final AtomicBoolean dirty = new AtomicBoolean(false);
 
@@ -45,17 +46,23 @@ public final class AnalyticsController {
         return new ArrayList<>(definitions);
     }
 
+    public List<String> getValidationMessages() {
+        return new ArrayList<>(validationMessages);
+    }
+
     public void reloadFromDisk() throws IOException {
         pendingDeletes.clear();
         definitions.clear();
+        validationMessages.clear();
         if (servicesDirectory == null || !Files.isDirectory(servicesDirectory)) {
             matcher.updateDefinitions(List.of());
             dirty.set(false);
             return;
         }
-        List<ServiceDefinition> loaded = repository.loadAll(servicesDirectory);
+        JsonServiceRepository.LoadResult result = repository.loadAllWithReport(servicesDirectory);
+        List<ServiceDefinition> loaded = result.definitions();
         definitions.addAll(loaded);
-        matcher.updateDefinitions(getDefinitions());
+        refreshMatcherAndValidation(result.warnings());
         dirty.set(false);
     }
 
@@ -67,7 +74,7 @@ public final class AnalyticsController {
         definitions.removeIf(d -> def.getId().equals(d.getId()));
         definitions.add(def);
         pendingDeletes.remove(def.getId());
-        matcher.updateDefinitions(getDefinitions());
+        refreshMatcherAndValidation(List.of());
         dirty.set(true);
     }
 
@@ -77,7 +84,7 @@ public final class AnalyticsController {
         }
         definitions.removeIf(d -> def.getId().equals(d.getId()));
         pendingDeletes.add(def.getId());
-        matcher.updateDefinitions(getDefinitions());
+        refreshMatcherAndValidation(List.of());
         dirty.set(true);
     }
 
@@ -106,5 +113,15 @@ public final class AnalyticsController {
                 upsert(def);
             }
         }
+    }
+
+    private void refreshMatcherAndValidation(List<String> loadWarnings) {
+        List<ServiceDefinition> snapshot = getDefinitions();
+        matcher.updateDefinitions(snapshot);
+        validationMessages.clear();
+        if (loadWarnings != null) {
+            validationMessages.addAll(loadWarnings);
+        }
+        validationMessages.addAll(matcher.validateDefinitions(snapshot));
     }
 }

@@ -27,9 +27,14 @@ public final class JsonServiceRepository {
     private final Gson gson = new GsonBuilder().setPrettyPrinting().disableHtmlEscaping().create();
 
     public List<ServiceDefinition> loadAll(Path directory) throws IOException {
+        return loadAllWithReport(directory).definitions();
+    }
+
+    public LoadResult loadAllWithReport(Path directory) throws IOException {
         List<ServiceDefinition> out = new ArrayList<>();
+        List<String> warnings = new ArrayList<>();
         if (directory == null || !Files.isDirectory(directory)) {
-            return out;
+            return new LoadResult(out, warnings);
         }
         try (Stream<Path> stream = Files.list(directory)) {
             stream
@@ -43,12 +48,15 @@ public final class JsonServiceRepository {
                                     if (def != null && def.getId() != null && !def.getId().isBlank()) {
                                         def.normalize();
                                         out.add(def);
+                                    } else {
+                                        warnings.add(path.getFileName() + ": missing required service id");
                                     }
-                                } catch (JsonParseException | IOException ignored) {
+                                } catch (JsonParseException | IOException e) {
+                                    warnings.add(path.getFileName() + ": " + e.getMessage());
                                 }
                             });
         }
-        return out;
+        return new LoadResult(out, warnings);
     }
 
     private static boolean isServiceJsonFile(Path p) {
@@ -133,4 +141,6 @@ public final class JsonServiceRepository {
         paths.sort(Comparator.comparing(p -> p.getFileName().toString()));
         return paths;
     }
+
+    public record LoadResult(List<ServiceDefinition> definitions, List<String> warnings) {}
 }

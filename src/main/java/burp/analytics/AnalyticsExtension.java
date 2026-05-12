@@ -1,6 +1,7 @@
 package burp.analytics;
 
 import burp.analytics.handler.AnalyticsHttpHandler;
+import burp.analytics.handler.AnalyticsTrafficAnalyzer;
 import burp.analytics.issues.AnalyticsIssueService;
 import burp.analytics.matcher.AnalyticsMatcher;
 import burp.analytics.session.SessionMatchStore;
@@ -20,12 +21,13 @@ public final class AnalyticsExtension implements BurpExtension {
         SessionMatchStore sessionMatches = new SessionMatchStore();
         AnalyticsController controller = new AnalyticsController(matcher);
         AnalyticsIssueService issueService = new AnalyticsIssueService(api);
+        AnalyticsTrafficAnalyzer trafficAnalyzer = new AnalyticsTrafficAnalyzer(matcher, sessionMatches, issueService);
 
         AnalyticsSuiteTab tab =
-                new AnalyticsSuiteTab(api, api.persistence().preferences(), controller, sessionMatches);
+                new AnalyticsSuiteTab(api, api.persistence().preferences(), controller, sessionMatches, trafficAnalyzer);
 
         AnalyticsHttpHandler httpHandler =
-                new AnalyticsHttpHandler(api, matcher, sessionMatches, issueService, tab::refreshAfterSessionMatch);
+                new AnalyticsHttpHandler(api, trafficAnalyzer, tab::refreshAfterSessionMatch);
         api.http().registerHttpHandler(httpHandler);
 
         api.userInterface().registerSuiteTab("Analytics DB", tab);

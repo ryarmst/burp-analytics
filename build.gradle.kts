@@ -15,6 +15,17 @@ repositories {
 dependencies {
     compileOnly("net.portswigger.burp.extensions:montoya-api:2024.12")
     implementation("com.google.code.gson:gson:2.11.0")
+    testCompileOnly("net.portswigger.burp.extensions:montoya-api:2024.12")
+    testImplementation("org.junit.jupiter:junit-jupiter:6.0.3")
+    testRuntimeOnly("org.junit.platform:junit-platform-launcher:6.0.3")
+}
+
+sourceSets {
+    create("ruleEditor") {
+        java.srcDir("src/ruleEditor/java")
+        compileClasspath += sourceSets.main.get().output + configurations.runtimeClasspath.get()
+        runtimeClasspath += output + compileClasspath
+    }
 }
 
 tasks.jar {
@@ -34,4 +45,19 @@ tasks.jar {
 
 tasks.withType<JavaCompile>().configureEach {
     options.encoding = "UTF-8"
+}
+
+tasks.test {
+    useJUnitPlatform()
+}
+
+tasks.register<JavaExec>("runRuleEditor") {
+    group = "application"
+    description = "Run the local analytics service rule editor."
+    classpath = sourceSets["ruleEditor"].runtimeClasspath
+    mainClass.set("burp.analytics.tools.RuleEditorServer")
+    args(
+        (findProperty("servicesDir") as String?) ?: "analytics",
+        (findProperty("port") as String?) ?: "8765"
+    )
 }
