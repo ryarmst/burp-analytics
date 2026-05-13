@@ -10,6 +10,7 @@ import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpServer;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.net.InetSocketAddress;
@@ -25,6 +26,8 @@ import java.util.regex.PatternSyntaxException;
 public final class RuleEditorServer {
 
     private static final Gson GSON = new GsonBuilder().disableHtmlEscaping().setPrettyPrinting().create();
+
+    private static volatile byte[] cachedAppJsBytes;
 
     private final Path servicesDirectory;
     private final JsonServiceRepository repository = new JsonServiceRepository();
@@ -48,6 +51,10 @@ public final class RuleEditorServer {
     private void handle(HttpExchange exchange) throws IOException {
         try {
             String path = exchange.getRequestURI().getPath();
+            if ("/rule-editor-app.js".equals(path)) {
+                serveAppJs(exchange);
+                return;
+            }
             if ("/".equals(path)) {
                 write(exchange, 200, "text/html; charset=utf-8", html());
                 return;
@@ -133,6 +140,31 @@ public final class RuleEditorServer {
         exchange.close();
     }
 
+    private static void serveAppJs(HttpExchange exchange) throws IOException {
+        byte[] bytes = cachedAppJsBytes;
+        if (bytes == null) {
+            synchronized (RuleEditorServer.class) {
+                if (cachedAppJsBytes == null) {
+                    cachedAppJsBytes = loadAppJsFromClasspath();
+                }
+                bytes = cachedAppJsBytes;
+            }
+        }
+        exchange.getResponseHeaders().set("Content-Type", "application/javascript; charset=utf-8");
+        exchange.sendResponseHeaders(200, bytes.length);
+        exchange.getResponseBody().write(bytes);
+        exchange.close();
+    }
+
+    private static byte[] loadAppJsFromClasspath() throws IOException {
+        try (InputStream in = RuleEditorServer.class.getResourceAsStream("/rule-editor-app.js")) {
+            if (in == null) {
+                return "// Missing classpath resource rule-editor-app.js\n".getBytes(StandardCharsets.UTF_8);
+            }
+            return in.readAllBytes();
+        }
+    }
+
     private static String html() {
         return """
                 <!doctype html>
@@ -158,6 +190,9 @@ public final class RuleEditorServer {
                     input, textarea { box-sizing: border-box; width: 100%; border: 1px solid #cbd5e1; border-radius: 6px; padding: 8px; background: white; }
                     textarea { min-height: 90px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
                     #patterns { min-height: 170px; }
+                    #methodology { min-height: 220px; white-space: pre-wrap; }
+                    #hostsPaste { min-height: 72px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+                    .field-hint { font-size: 12px; color: #64748b; margin: 4px 0 8px; }
                     .status { margin-top: 10px; white-space: pre-wrap; }
                     .warn { color: #92400e; }
                     .error { color: #b91c1c; }
@@ -167,118 +202,45 @@ public final class RuleEditorServer {
                 <body>
                   <header>
                     <strong>Analytics Rule Editor</strong>
-                    <span class="muted">Edit service JSON files locally</span>
+                    <span class="muted">Edit service JSON + methodology (.md) locally</span>
                   </header>
                   <main>
                     <section class="card">
                       <div class="toolbar">
-                        <button onclick="newService()">New</button>
-                        <button onclick="loadServices()">Reload</button>
+                        <button type="button" onclick="newService()">New</button>
+                        <button type="button" onclick="loadServices()">Reload</button>
                       </div>
+                      <label for="search">Search services</label>
+                      <input id="search" type="search" placeholder="Name, patterns, or methodology…" autocomplete="off">
                       <div id="warnings" class="status warn"></div>
                       <div id="serviceList" class="list"></div>
                     </section>
                     <section class="card">
                       <div class="toolbar">
-                        <button class="primary" onclick="saveService()">Save</button>
-                        <button class="danger" onclick="deleteService()">Delete</button>
+                        <button type="button" class="primary" onclick="saveService()">Save</button>
+                        <button type="button" class="danger" onclick="deleteService()">Delete</button>
                       </div>
                       <input id="id" type="hidden">
                       <label for="name">Name</label>
                       <input id="name" autocomplete="off">
                       <label for="description">Description</label>
                       <textarea id="description"></textarea>
-                      <label for="methodology">Testing methodology</label>
-                      <textarea id="methodology"></textarea>
+                      <label for="methodology">Testing methodology (Markdown)</label>
+                      <p class="field-hint">Stored in a sidecar <code>.md</code> file next to the service JSON (same id → same base filename). The JSON file keeps an empty <code>methodology</code> field on save.</p>
+                      <textarea id="methodology" spellcheck="false"></textarea>
                       <label for="patterns">Regex patterns, one per line</label>
                       <textarea id="patterns" spellcheck="false"></textarea>
+                      <label for="hostsPaste">Paste hosts / domains</label>
+                      <p class="field-hint">One host per line, comma-separated, or full URLs — each becomes <code>^escaped literal host$</code> (dots and regex metachars escaped; skips duplicates already in patterns).</p>
+                      <textarea id="hostsPaste" spellcheck="false" placeholder="stats.g.doubleclick.net&#10;https://cdn.example.com/sdk.js&#10;a.example.com, b.example.com"></textarea>
+                      <div class="toolbar">
+                        <button type="button" onclick="appendFqdnPatterns()">Append FQDN patterns</button>
+                      </div>
                       <label><input id="tls" type="checkbox" style="width:auto"> TLS pass-through</label>
                       <div id="status" class="status"></div>
                     </section>
                   </main>
-                  <script>
-                    let services = [];
-                    let selectedId = null;
-
-                    function byId(id) { return document.getElementById(id); }
-                    function setStatus(message, cls = "") {
-                      const el = byId("status");
-                      el.className = "status " + cls;
-                      el.textContent = message;
-                    }
-                    function serviceFromForm() {
-                      return {
-                        schemaVersion: "1",
-                        id: byId("id").value,
-                        name: byId("name").value.trim(),
-                        description: byId("description").value,
-                        methodology: byId("methodology").value,
-                        patterns: byId("patterns").value.split("\\n").map(s => s.trim()).filter(Boolean),
-                        tlsPassThrough: byId("tls").checked,
-                        tlsHostRegex: ""
-                      };
-                    }
-                    function fillForm(service) {
-                      selectedId = service?.id || "";
-                      byId("id").value = service?.id || "";
-                      byId("name").value = service?.name || "";
-                      byId("description").value = service?.description || "";
-                      byId("methodology").value = service?.methodology || "";
-                      byId("patterns").value = (service?.patterns || []).join("\\n");
-                      byId("tls").checked = Boolean(service?.tlsPassThrough);
-                      renderList();
-                    }
-                    function newService() {
-                      fillForm({ schemaVersion: "1", patterns: ["^analytics\\\\.example\\\\.com$"] });
-                      setStatus("New service draft. Save to create a JSON file.");
-                    }
-                    function renderList() {
-                      const list = byId("serviceList");
-                      list.textContent = "";
-                      services.forEach(service => {
-                        const button = document.createElement("button");
-                        button.className = "item" + (service.id === selectedId ? " active" : "");
-                        button.textContent = service.name || service.id;
-                        button.onclick = () => fillForm(service);
-                        list.appendChild(button);
-                      });
-                    }
-                    async function loadServices() {
-                      const res = await fetch("/api/services");
-                      const body = await res.json();
-                      services = body.services || [];
-                      byId("warnings").textContent = (body.warnings || []).join("\\n");
-                      renderList();
-                      if (services.length && !selectedId) fillForm(services[0]);
-                      setStatus("Loaded " + services.length + " service(s).");
-                    }
-                    async function saveService() {
-                      const res = await fetch("/api/services", {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify(serviceFromForm())
-                      });
-                      const body = await res.json();
-                      if (!res.ok) {
-                        setStatus((body.errors || [body.error || "Save failed"]).join("\\n"), "error");
-                        return;
-                      }
-                      selectedId = body.id;
-                      setStatus("Saved " + body.name + ".");
-                      await loadServices();
-                      fillForm(services.find(s => s.id === selectedId) || body);
-                    }
-                    async function deleteService() {
-                      const id = byId("id").value;
-                      if (!id || !confirm("Delete this service JSON file?")) return;
-                      await fetch("/api/services/" + encodeURIComponent(id), { method: "DELETE" });
-                      selectedId = null;
-                      fillForm({});
-                      await loadServices();
-                      setStatus("Deleted service.");
-                    }
-                    loadServices().catch(e => setStatus(e.message, "error"));
-                  </script>
+                  <script src="/rule-editor-app.js" defer></script>
                 </body>
                 </html>
                 """;

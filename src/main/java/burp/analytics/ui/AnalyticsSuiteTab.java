@@ -159,7 +159,8 @@ public final class AnalyticsSuiteTab extends JPanel {
                 "For each unique FQDN in this list, add a host-only pattern to TLS pass-through (skips hosts already covered)");
         addTlsSession.addActionListener(e -> addSessionHostsToTlsPassThrough());
         JButton scanHistory = new JButton("Scan proxy history");
-        scanHistory.setToolTipText("Passively scan existing Proxy history for analytics service matches");
+        scanHistory.setToolTipText(
+                "Scan Proxy HTTP history for analytics matches: regexes run on request host/path and, if no match, on the response body (first 1 MiB UTF-8 preview)");
         scanHistory.addActionListener(e -> scanProxyHistory(scanHistory));
         sessBtns.add(clear);
         sessBtns.add(repeater);
@@ -337,7 +338,12 @@ public final class AnalyticsSuiteTab extends JPanel {
         ServiceDefinition cur = serviceModel.getRow(row);
         int ok =
                 JOptionPane.showConfirmDialog(
-                        this, "Remove " + cur.getName() + " from the list? (Save writes the deletion to disk.)", "Confirm", JOptionPane.OK_CANCEL_OPTION);
+                        this,
+                        "Remove "
+                                + cur.getName()
+                                + " from the list? Save writes the deletion to disk (JSON + methodology .md sidecar if present).",
+                        "Confirm",
+                        JOptionPane.OK_CANCEL_OPTION);
         if (ok != JOptionPane.OK_OPTION) {
             return;
         }
@@ -543,7 +549,7 @@ public final class AnalyticsSuiteTab extends JPanel {
             return;
         }
         scanButton.setEnabled(false);
-        api.logging().logToOutput("Analytics: scanning Proxy history for analytics matches.");
+        api.logging().logToOutput("Analytics: scanning Proxy history (request + response body regex pass).");
         SwingWorker<ScanHistoryResult, Void> worker =
                 new SwingWorker<>() {
                     @Override

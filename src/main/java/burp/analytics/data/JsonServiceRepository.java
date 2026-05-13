@@ -19,12 +19,21 @@ import java.util.stream.Stream;
 
 import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 
-/** Load/save one JSON file per service; atomic save via temp file then move. */
+/** Load/save one JSON file per service; methodology is stored in a sidecar {@code .md} file next to JSON. */
 public final class JsonServiceRepository {
 
     private static final String SUFFIX = ".json";
+    private static final String METHODOLOGY_SUFFIX = ".md";
 
     private final Gson gson = new GsonBuilder().setPrettyPrinting().disableHtmlEscaping().create();
+
+    /** Path {@code directory/{sanitizedId}.md} for testing methodology. */
+    public static Path methodologyPath(Path directory, String id) {
+        if (directory == null || id == null || id.isBlank()) {
+            return null;
+        }
+        return directory.resolve(sanitizeFileName(id) + METHODOLOGY_SUFFIX);
+    }
 
     public List<ServiceDefinition> loadAll(Path directory) throws IOException {
         return loadAllWithReport(directory).definitions();
@@ -47,6 +56,7 @@ public final class JsonServiceRepository {
                                     ServiceDefinition def = gson.fromJson(json, ServiceDefinition.class);
                                     if (def != null && def.getId() != null && !def.getId().isBlank()) {
                                         def.normalize();
+                                        mergeMethodologyFromFile(directory, def);
                                         out.add(def);
                                     } else {
                                         warnings.add(path.getFileName() + ": missing required service id");
@@ -84,6 +94,10 @@ public final class JsonServiceRepository {
         ServiceDefinition def = gson.fromJson(json, ServiceDefinition.class);
         if (def != null) {
             def.normalize();
+            Path parent = file.getParent();
+            if (parent != null && Files.isDirectory(parent)) {
+                mergeMethodologyFromFile(parent, def);
+            }
         }
         return def;
     }
@@ -97,8 +111,42 @@ public final class JsonServiceRepository {
         Path target = directory.resolve(fileName);
         Path temp = Files.createTempFile("analytics-svc-", SUFFIX);
         try {
-            String json = gson.toJson(def);
+            ServiceDefinition forJson = def.copy();
+            forJson.setMethodology("");
+            String json = gson.toJson(forJson);
             Files.writeString(temp, json, StandardCharsets.UTF_8);
+            try {
+                Files.move(temp, target, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
+            } catch (AtomicMoveNotSupportedException e) {
+                Files.copy(temp, target, REPLACE_EXISTING);
+                Files.deleteIfExists(temp);
+            }
+        } finally {
+            Files.deleteIfExists(temp);
+        }
+        saveMethodologyMarkdown(directory, def.getId(), def.getMethodology());
+    }
+
+    private static void mergeMethodologyFromFile(Path directory, ServiceDefinition def) throws IOException {
+        Path md = methodologyPath(directory, def.getId());
+        if (md == null || !Files.isRegularFile(md)) {
+            return;
+        }
+        def.setMethodology(Files.readString(md, StandardCharsets.UTF_8));
+    }
+
+    private static void saveMethodologyMarkdown(Path directory, String id, String methodology) throws IOException {
+        Path target = methodologyPath(directory, id);
+        if (target == null) {
+            return;
+        }
+        if (methodology == null || methodology.isBlank()) {
+            Files.deleteIfExists(target);
+            return;
+        }
+        Path temp = Files.createTempFile("analytics-md-", METHODOLOGY_SUFFIX);
+        try {
+            Files.writeString(temp, methodology, StandardCharsets.UTF_8);
             try {
                 Files.move(temp, target, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
             } catch (AtomicMoveNotSupportedException e) {
@@ -116,6 +164,10 @@ public final class JsonServiceRepository {
         }
         Path file = directory.resolve(sanitizeFileName(id) + SUFFIX);
         Files.deleteIfExists(file);
+        Path md = methodologyPath(directory, id);
+        if (md != null) {
+            Files.deleteIfExists(md);
+        }
     }
 
     private static String sanitizeFileName(String id) {

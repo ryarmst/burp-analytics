@@ -50,6 +50,15 @@ public final class AnalyticsTrafficAnalyzer {
     }
 
     public MatchRecordStatus recordProxyHistoryItem(ProxyHttpRequestResponse item, boolean raiseIssue) {
+        return recordProxyHistoryItem(item, raiseIssue, true);
+    }
+
+    /**
+     * When {@code matchResponseBody} is true, applies the same service regex patterns to a bounded
+     * UTF-8 preview of the response body if request-based matching misses (manual history scan).
+     */
+    public MatchRecordStatus recordProxyHistoryItem(
+            ProxyHttpRequestResponse item, boolean raiseIssue, boolean matchResponseBody) {
         if (item == null) {
             return MatchRecordStatus.NO_MATCH;
         }
@@ -60,7 +69,48 @@ public final class AnalyticsTrafficAnalyzer {
         if (request == null) {
             return MatchRecordStatus.NO_MATCH;
         }
-        return recordIfMatch(request, item.response(), item.annotations(), raiseIssue);
+        return recordHistoryScanMatch(request, item.response(), item.annotations(), raiseIssue, matchResponseBody);
+    }
+
+    private MatchRecordStatus recordHistoryScanMatch(
+            HttpRequest request,
+            HttpResponse response,
+            Annotations annotations,
+            boolean raiseIssue,
+            boolean matchResponseBody) {
+        Optional<MatchResult> match = matcher.matchHttpRequest(request);
+        String matchTarget = MatchStrings.fromRequest(request);
+        if (match.isEmpty() && matchResponseBody) {
+            String bodyText = ResponseBodyText.utf8Preview(response, ResponseBodyText.DEFAULT_MAX_BYTES);
+            if (!bodyText.isEmpty()) {
+                match = matcher.match(bodyText);
+                if (match.isPresent()) {
+                    matchTarget = "(response body) " + matchTarget;
+                }
+            }
+        }
+        if (match.isEmpty()) {
+            return MatchRecordStatus.NO_MATCH;
+        }
+        MatchResult result = match.orElseThrow();
+        var service = result.getService();
+        String fqdn = request.httpService().host();
+        HttpRequestResponse evidence = HttpRequestResponse.httpRequestResponse(request, response, annotations);
+        boolean recorded =
+                sessionMatches.recordIfNewFqdnService(
+                        fqdn,
+                        service.getId(),
+                        service.getName(),
+                        result.getMatchedPattern(),
+                        matchTarget,
+                        evidence);
+        if (!recorded) {
+            return MatchRecordStatus.DUPLICATE;
+        }
+        if (raiseIssue) {
+            issueService.raiseInformationalIssue(service, result.getMatchedPattern(), evidence);
+        }
+        return MatchRecordStatus.RECORDED;
     }
 
     public enum MatchRecordStatus {
